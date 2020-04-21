@@ -1,0 +1,120 @@
+function [t,HC] = StochSystem(tE,x,beta,sigma,tau,M,M2,gamma,q,h,f,c,delta,mh,mueH,psiH,mc,mueC,psiC,P,A,HT)
+%% dxdt = SODE()
+% System of ODE to run the model for vaccination and contact tracing
+%% Input parameters
+%t - time variable
+%x - State variable 
+%     S=[1:A]; % Susceptible
+%     E=A+[1:A]; % Incubation
+%     IH=2*A+[1:A]; %Symptomatic and will be hospitalized
+%     IN=3*A+[1:A]; %Symptomatic and will not be hospitalized
+%     QH=4*A+[1:A]; %Isolation and will be hospitalized
+%     QN=5*A+[1:A]; %Isolation and will not be hospitalized
+%     H=6*A+[1:A]; % Hospitalized
+%     C=7*A+[1:A]; % ICU
+%beta - probability of infection
+%sigma - Rate from infection to symptoms
+%tau - Contact tracing rate
+%M - contact matrix (Size: AxA)
+%M2 - contact matrix home (Size: AxA)
+%gamma - rate to recovery symptomatic individual
+%q - rate percentage of unvaccinated syptomatic case self-quaratine
+%h - rate percentage of unvaccinated symptatic case being hospitalized
+%delta - hospitalization rate
+%mh - rate percentage for mortality in hospital
+%mueH - mortality rate in hospital
+%psiH - recover rate from hosptial
+%mc - rate percentage for mortality in ICU
+%mueC - mortality rate in ICU
+%psiC - recover rate from ICU
+%P -Population size
+%A - Number of ages classes considered
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Computational Code
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Initialize the vector and specify the index equations
+
+% Index for dxdt and x to make readability of code easier
+S=[1:A]; % Susceptible
+E=A+[1:A]; % Incubation and non-vaccinated
+IH=2*A+[1:A]; % Incubation andvaccinated after infection
+IN=3*A+[1:A]; %Symptomatic and non-vaccinated
+QH=4*A+[1:A]; %Observation in incubation and non-vaccinated
+QN=5*A+[1:A]; %Quaratine and non-vaccinated
+H=6*A+[1:A]; % Quaratine to hosptial and non-vaccinated
+C=7*A+[1:A]; % Not quaratined previosuly to hosptial and non-vaccinated
+
+EV=[beta.*(M*x(IN)./P+M*x(IH)./P+M2*x(QN)./P+M2*x(QH)./P).*x(S);
+    sigma.*x(E);
+    delta.*x(IH);
+    (1-f).*gamma.*x(IN);
+    f.*tau.*x(IN);
+    delta.*x(QH);
+    gamma.*x(QN);
+    ((1-mh).*psiH+mh.*mueH).*x(H);
+    ((1-mc).*psiC+mc.*mueC).*x(C)];
+dx=zeros(length(x),length(EV));
+for jj=1:A
+    dx(S(jj),jj)=-1; dx(E(jj),jj)=1; % beta.*(M*x(IN)./P+M*x(IH)./P+M2*x(QN)./P+M2*x(QH)./P).*x(S)
+    dx(E(jj),(A+jj))=-1; 
+    dx(IH(jj),(2*A+jj))=-1;
+    dx(IN(jj),(3*A+jj))=-1; %(1-f).*gamma.*x(IN);
+    dx(IN(jj),(4*A+jj))=-1;dx(QN(jj),(4*A+jj))=1; %f.*tau.*x(IN);
+    dx(QH(jj),(5*A+jj))=-1;
+    dx(QN(jj),(6*A+jj))=-1; %gamma.*x(QN);
+    dx(H(jj),(7*A+jj))=-1; %((1-mh).*psiH+mh.*mueH).*x(H);
+    dx(C(jj),(8*A+jj))=-1; %((1-mc).*psiC+mc.*mueC).*x(C)];
+end
+X=x;
+t=0;
+T=t;
+while((t<tE)&&(sum(x([H C]))<=HT)&&(sum(x([E IH IN QH QN]))>0))
+   EV=[beta.*(M*x(IN)./P+M*x(IH)./P+M2*x(QN)./P+M2*x(QH)./P).*x(S);
+    sigma.*x(E);
+    delta.*x(IH);
+    (1-f).*gamma.*x(IN);
+    f.*tau.*x(IN);
+    delta.*x(QH);
+    gamma.*x(QN);
+    ((1-mh).*psiH+mh.*mueH).*x(H);
+    ((1-mc).*psiC+mc.*mueC).*x(C)];
+   ac=cumsum(EV)./sum(EV);
+   r=rand(1);
+   r2=rand(1);
+   findj=find(ac>=r,1);
+   x=x+dx(:,findj);
+   if((findj>=A+1)&&(findj<=2*A))
+      rtemp=rand(1);
+      cc=cumsum([(1-q)*h(findj-A) (1-q)*(1-h(findj-A)) q*h(findj-A) q*(1-h(findj-A))  ]);
+      if(cc(1)>=rtemp)
+          x(IH(findj-A))=x(IH(findj-A))+1;
+      elseif (cc(2)>=rtemp)
+          x(IN(findj-A))=x(IN(findj-A))+1;
+      elseif (cc(3)>=rtemp)
+          x(QH(findj-A))=x(QH(findj-A))+1;
+      else
+           x(QN(findj-A))=x(QN(findj-A))+1;
+      end
+   elseif ((findj>=2*A+1)&&(findj<=3*A))
+       rtemp=rand(1);
+       if(c(findj-2*A)>=rtemp)
+          x(C(findj-2*A))=x(C(findj-2*A))+1; 
+       else
+           x(H(findj-2*A))=x(H(findj-2*A))+1; 
+       end
+   elseif ((findj>=5*A+1)&&(findj<=6*A))
+       rtemp=rand(1);
+       if(c(findj-5*A)>=rtemp)
+          x(C(findj-5*A))=x(C(findj-5*A))+1; 
+       else
+           x(H(findj-5*A))=x(H(findj-5*A))+1; 
+       end       
+   end
+   dt=log(1./(1-r2))./sum(EV);
+   t=t+dt;
+end
+HC=(sum(x([H C])));
+
+
+end
+

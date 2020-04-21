@@ -1,0 +1,12 @@
+*.log
+*.m~
+*.py~
+*.m#
+*.tex
+*.tex~
+*.aux
+*.org
+*.org~
+*.org#
+*.html~
+
