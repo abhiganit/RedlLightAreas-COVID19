@@ -99,9 +99,17 @@ M2R(1:4,1:4) = 0;
 dxdt(S)= -(kA*M*x(IA)./P + kM*M*x(IN)./P ...
                  + M*x(IH)./P+kM*M2*x(QN)./P+M2*x(QH)./P).*x(S);
 
+% dxdt(S)= -(kA*M*x(IA)./P + kM*M*x(IN)./P ...
+%                  + M*x(IH)./P).*x(S);
+
+
 %% Incubation period population
 dxdt(E)= (kA*M*x(IA)./P + kM*M*x(IN)./P ...
                  + M*x(IH)./P+kM*M2*x(QN)./P+M2*x(QH)./P).*x(S)-sigma.*x(E);
+
+% dxdt(E)= (kA*M*x(IA)./P + kM*M*x(IN)./P ...
+%                  + M*x(IH)./P).*x(S)-sigma.*x(E);
+
 %% Asymptomatic infections
 dxdt(IA) = a.*sigma.*x(E) - gamma.*x(IA);
 
@@ -110,6 +118,7 @@ dxdt(IA) = a.*sigma.*x(E) - gamma.*x(IA);
 dxdt(IH)=(1-a).*(1-q).*h.*sigma.*x(E) -f.*tau.*x(IH)-(1-f).*delta.*x(IH);
 % Mild
 dxdt(IN)=(1-a).*(1-q).*(1-h).*sigma.*x(E)-f.*tau.*x(IN)-(1-f).*gamma.*x(IN);
+
 %% Symptomatic and isolated (ISI,IMI)
 % Severe
 dxdt(QH)=(1-a)*q.*h.*sigma.*x(E) + f.*tau.*x(IH) -delta.*x(QH);
@@ -124,14 +133,22 @@ dxdt(C)=c.*delta.*x(QH)+(1-f).*c.*delta.*x(IH)-(1-mc).*psiC.*x(C)-mc.*mueC.*x(C)
 %% Deaths
 dxdt(D) = mh.*mueH.*x(H) + mc.* mueC.*x(C);
 
-%% Cumulative cases due to RLA
+%% Cumulative cases
 dxdt(CC) = (kA*M*x(IA)./P + kM*M*x(IN)./P ...
                  + M*x(IH)./P+kM*M2*x(QN)./P+M2*x(QH)./P).*x(S);
+
+% dxdt(CC) = (kA*M*x(IA)./P + kM*M*x(IN)./P ...
+%                  + M*x(IH)./P).*x(S);
+
 
 %% Compartments considering infections attributable to RLA
 %% Incubation period population
 dxdt(ER)= (kA*MR*x(IA)./P + kM*MR*x(IN)./P ...
                  + MR*x(IH)./P+kM*M2R*x(QN)./P+M2R*x(QH)./P).*x(S)-sigma.*x(ER);
+
+% dxdt(ER)= (kA*MR*x(IA)./P + kM*MR*x(IN)./P ...
+%                  + MR*x(IH)./P).*x(S)-sigma.*x(ER);
+
 %% Asymptomatic infections
 dxdt(IAR) = a.*sigma.*x(ER) - gamma.*x(IAR);
 
@@ -157,5 +174,8 @@ dxdt(DR) = mh.*mueH.*x(HR) + mc.* mueC.*x(CR);
 %% Cumulative cases due to RLA
 dxdt(CCR) = (kA*MR*x(IA)./P + kM*MR*x(IN)./P ...
                  + MR*x(IH)./P+kM*M2R*x(QN)./P+M2R*x(QH)./P).*x(S);
+
+% dxdt(CCR) = (kA*MR*x(IA)./P + kM*MR*x(IN)./P ...
+%                  + MR*x(IH)./P).*x(S);
 
 end

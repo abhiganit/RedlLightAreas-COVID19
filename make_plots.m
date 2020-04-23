@@ -1,5 +1,5 @@
 WR = [1,2,3,4,5,6]; % which Red Light Area
-R0 = [1.75,2,2.25]; % Different values of R0
+R0 = [2,2.25,2.5]; % Different values of R0
 
 TM0 = {}; YM0 = {}; TM={}; YM={}; TML={}; YML ={}; Pop={};
 i = 1;
@@ -160,8 +160,8 @@ for i = 1:6
                 'Citywide, Initial lockdown, Continued RLA closure',...
                 'RLA, Initial lockdown, Continued RLA closure')
     lg.FontSize = 20;
-    lt = get(lg,'Title');
-    set(lt,'String','Pop, Initial lockdown, Continued RLA closure','FontSize',12);
+    % lt = get(lg,'Title');
+    % set(lt,'String','Pop, Initial lockdown, Continued RLA closure','FontSize',12);
     legend boxoff
     %axes(hs(2))
     subplot(2,2,3)
@@ -225,7 +225,7 @@ for i = 1:4
     %subplot(3,1,i)
     axes(hs(i));
     colormap(hex2rgb(rang));
-    bar(Smry{i});
+    bar(Smry{i}(1:5,:));
     title(titles{i},'FontSize',14);
     yp = ylabel(yl{i},'FontSize',24);
     pos = get(yp,'Pos');
