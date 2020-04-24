@@ -14,7 +14,8 @@ R0E=r0;
 
 [beta,kA,kM,sigma,tau,M,M2,gamma,a,q,h,f,c,delta,mh,mueH,psiH,mc,mueC,psiC,P]=ParameterOutput(Amin,R0E,State,0);
 
-f = 0;
+q = 0;
+tau = 1;
 % We assume that probability of infection for interaction between
 % red light area and general population is 1.
 tm = 1/beta;
@@ -86,8 +87,9 @@ M2x = M2;
 %IC = YM1(end,:);
 tbl = 0;
 ttl = 40; % time till lockdown
-% f = 0.5;
-q = 0.5;
+f = 0.5;
+tau = 1;
+%q = 0.5;
 [TM2,YM2] = ode15s(@(t,y)ASODE(t,y,beta,kA,kM,sigma,tau,Mx,M2x,gamma,a,q,h,f,c,...
                              delta,mh,mueH,psiH,mc,mueC,psiC,Pop,A,Ss,CM,tm),...
                   [tbl:tbl+ttl],IC,options);

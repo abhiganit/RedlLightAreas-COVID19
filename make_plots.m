@@ -1,5 +1,5 @@
 WR = [1,2,3,4,5,6]; % which Red Light Area
-R0 = [2,2.25,2.5]; % Different values of R0
+R0 = [1.75,2,2.25,2.5]; % Different values of R0
 
 TM0 = {}; YM0 = {}; TM={}; YM={}; TML={}; YML ={}; Pop={};
 i = 1;
@@ -13,7 +13,6 @@ for wr = WR;
     end
     i=i+1;
 end
-
 
 %% Index for dxdt and x to make readability of code easier
 A = 4; Ss = 2;
@@ -52,6 +51,7 @@ C1 = C(1:4); C2 = C(5:end);
 D1 = D(1:4); D2 = D(5:end);
 
 
+
 % Calculate delay in peaks under different scenarios
 st = 1; en = 365;
 stl = 15; enl = 50;
@@ -59,7 +59,7 @@ stl = 15; enl = 50;
 % delay in peaks
 Dl = [];
 for i = 1:6; % varying over RLAs
-    for j = 1:3; %varying over R0
+    for j = 1:4; %varying over R0
         yM = YM{i}{j};
         yML = YML{i}{j};
         [v0,ix0] = max(sum(yM(st:en,[IA IH IN QH QN]),2));
@@ -72,7 +72,7 @@ end
 % difference in peaks
 Pl = []; %zeros(5,5);
 for i = 1:6; % varying over RLAs
-    for j = 1:3; % varying over R0
+    for j = 1:4; % varying over R0
         yM = YM{i}{j};
         yML = YML{i}{j};
         [v0,ix0] = max(sum(yM(st:en,[IA IH IN QH QN]),2));
@@ -86,7 +86,7 @@ end
 Cs = [];
 
 for i = 1:6; % varying over RLAs
-    for j = 1:3; % varying over R0
+    for j = 1:4; % varying over R0
         yM = YM{i}{j};
         yML = YML{i}{j};
         [v0,ix0] = max(sum(yM(st:en,[CCR]),2));
@@ -99,7 +99,7 @@ end
 Ds = [];
 
 for i = 1:6; % varying over RLAs
-    for j = 1:3; % varying over R0
+    for j = 1:4; % varying over R0
         yM = YM{i}{j};
         yML = YML{i}{j};
         [v0,ix0] = max(sum(yM(st:en,[DR]),2));
@@ -110,16 +110,49 @@ end
 
 
 
-%% Plots
+
+%% Save data to read in python
+locations = {'Mumbai','Nagpur','Delhi','Kolkata','Pune','India'};
+for i = 1:6
+    Cases = []; CasesR = []; CasesPC = []; CasesRPC = [];
+    CLR = []; DLR = [];
+    for k = 1:4 % varying over R0
+        tM0 = TM0{i}{k}; tM = TM{i}{k}; tML = TML{i}{k};
+        yM0 = YM0{i}{k}; yM = YM{i}{k}; yML = YML{i}{k};
+        PopA = sum(Pop{i}{k});
+        PopR = sum(Pop{i}{k}(5:8));
+        t = {tM0,tM,tML}; y = {yM0,yM,yML};
+        for j = 1:3
+            Cases = [Cases,sum(y{j}(st:en,[IA IH IN QH QN]),2)];
+            CasesPC = [CasesPC,1000*sum(y{j}(st:en,[IA IH IN QH QN]),2)/ ...
+                       PopA];
+            CasesR = [CasesR,1000*sum(y{j}(st:en,[IA2 IH2 IN2 QH2 QN2]),2)/PopR];
+            CasesRPC = [CasesRPC,1000*sum(y{j}(st:en,[IA2 IH2 IN2 QH2 QN2]),2)/PopR];
+        end
+        for j = 2:3
+            CLR = [CLR,sum(y{j}(st:en,[CCR]),2)];
+            DLR = [DLR,sum(y{j}(st:en,[DR]),2)];
+        end
+
+    end
+filename = strcat(locations{i},'.mat');
+save(filename,'Cases','CasesPC','CasesR','CasesRPC','CLR','DLR');
+end
+
+% save summary
+save('summary.mat','Dl','Pl','Cs','Ds');
+
+
+%% Plots (Have written code to plot them in Python
 locations =  {'Mumbai','Nagpur','Delhi','Kolkata','Pune','India'};
 rang= {'#fef0d9','#fdcc8a','#fc8d59','#e34a33','#b30000'};
 dm = [1,1,4];
 % Incidence Per Capita
 for i = 1:6
-    tM0 = TM0{i}{2}; tM = TM{i}{2}; tML = TML{i}{2};
-    yM0 = YM0{i}{2}; yM = YM{i}{2}; yML = YML{i}{2};
-    PopA = sum(Pop{i}{2});
-    PopR = sum(Pop{i}{2}(5:8));
+    tM0 = TM0{i}{3}; tM = TM{i}{3}; tML = TML{i}{3};
+    yM0 = YM0{i}{3}; yM = YM{i}{3}; yML = YML{i}{3};
+    PopA = sum(Pop{i}{3});
+    PopR = sum(Pop{i}{3}(5:8));
     t = {tM0,tM,tML}; y = {yM0,yM,yML};
     colorG = {'k-','b-','g-'};
     colorR = {'ko','bo','go'};
@@ -230,20 +263,20 @@ for i = 1:4
     yp = ylabel(yl{i},'FontSize',24);
     pos = get(yp,'Pos');
     %set(yp,'Pos',[xpos,pos(2),pos(3)]);
-    set(gca,'FontSize',16)
+    set(gca,'FontSize',16);
     if i<4
-        set(gca,'XTickLabel',[])
+        set(gca,'XTickLabel',[]);
     else
         set(gca,'XTickLabel',{'RLA 1','RLA 2','RLA 3','RLA 4',...
-                   'RLA 5','India'})
+                   'RLA 5','India'});
     end
 
     if i ==1
-        hleg = legend('1.75','2','2.25');
+        hleg = legend('2','2.25','2.5');
         hleg.FontSize = 18;
         htitle = get(hleg,'Title');
-        set(htitle,'String','R_0','FontSize',18)
-        legend boxoff
+        set(htitle,'String','R_0','FontSize',18);
+        legend boxoff;
     end
 
     % if i == 1
