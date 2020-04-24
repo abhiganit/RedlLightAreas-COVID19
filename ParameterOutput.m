@@ -25,13 +25,13 @@ function [beta,kA,kM,sigma,tau,M,M2,gamma,a,q,h,f,c,delta,mh,mueH,psiH,mc,mueC,p
 %psiC  - recover rate from ICU
 %P     - population size
 %% Paramter specification
-kA = 0.55;
-kM = 0.55;
+kA = 0.5;
+kM = 0.5;
 sigma=1/5.2; %1/4
-tau=1/2;
+tau=1;
 gamma=1/4.6; %1/(2*(7.5-4));
 a = 0.28;
-q=0.05;
+q=0.0;
 f=0.05;
 h=[0.025, 0.32, 0.32, 0.64]'; %updated
 c=[0.014, 0.042, 0.075, 0.15]'; %updated

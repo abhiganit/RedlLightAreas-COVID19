@@ -8,11 +8,14 @@ from matplotlib.gridspec import GridSpec
 
 locations =  ['Mumbai','Nagpur','Delhi','Kolkata','Pune','India'];
 
-R0 = ['R0 = 1.75','R0 = 2','R0 = 2.25','R0 = 2.5']
+R0 = ['R0=1.75','R0=2','R0=2.25','R0=2.5']
+
+# column names for all population
 ScenariosC = ['No initial lockdown,Citywide',
               'Return to status quo after lockdown,Citywide',
               'Coninued closure of Red light area after lockdown,Citywide']
 
+# column names for red light area
 ScenariosR = ['No initial lockdown,Red light area',
               'Return to status quo after lockdown,Red light area',
               'Coninued closure of Red light area after lockdown,Red light area']
@@ -20,35 +23,64 @@ ScenariosR = ['No initial lockdown,Red light area',
 iterablesC = [R0,ScenariosC]
 iterablesR = [R0,ScenariosR]
 
-
+# dataframe header for all population
 colsC = pd.MultiIndex.from_product(iterablesC,names=['R0','Scenarios'])
+# dataframe header for red light area
 colsR = pd.MultiIndex.from_product(iterablesR,names=['R0','Scenarios'])
 
-Scenarios1 = [ 'Return to status quo after lockdown',
-              'Coninued closure of Red light area after lockdown']
+# column names for summary statistics
+Scenarios1 = ['No initial lockdown',
+              'Return to status quo after initial lockdown',
+              'Coninued closure of ed light area after initial lockdown']
 iterables1 = [R0,Scenarios1]
+# dataframe header for summary statistics
 cols1 = pd.MultiIndex.from_product(iterables1,names=['R0','Scenarios'])
+variables = ['Cases','CasesPC','CumCases','Deaths','Hosp',
+             'CasesR','CasesRPC','CumCasesR','DeathsR','HospR']
+var_names =['Cases',
+            'Cases per 1000',
+            'Cumulative cases',
+            'Cumulative deaths',
+            'Hospitalization',
+            'Cases in RLA',
+            'Cases per 1000 in RLA',
+            'Cumulative cases in RLA',
+            'Cumulative deaths in RLA',
+            'Hospitalization in RLA']
 
-
-
+temp = dict(zip(variables,var_names))
 # Save cases and per capita cases in city and RLA
 D = {}
-dd = {};
+ind = (pd.date_range(start='24/03/2020',end='23/03/2021')).date
 for location in locations:
-    writer = pd.ExcelWriter(location+'.xlsx', engine='xlsxwriter')
+    dd = {};
+    writer = pd.ExcelWriter('Data_RLA/'+location+'.xlsx', engine='xlsxwriter')
     data = loadmat(location+'.mat')
-    for key in ['Cases','CasesPC']:
-        df = pd.DataFrame(np.array((data[key])),columns =colsC)
-        df.to_excel(writer,sheet_name =key)
+    for key in variables[:5]:
+        df = pd.DataFrame(np.array((data[key])),columns =colsC,index=ind)
+        df.to_excel(writer,sheet_name =temp[key])
         dd[key] = df
-    for key in  ['CasesR','CasesRPC']:
-        df = pd.DataFrame(np.array((data[key])),columns =colsR)
-        df.to_excel(writer,sheet_name =key)
+    for key in  variables[5:]:
+        df = pd.DataFrame(np.array((data[key])),columns =colsR,index=ind)
+        df.to_excel(writer,sheet_name =temp[key])
         dd[key] = df
+    writer.save()
+    D[location] = dd
 
-    for key in ['CLR','DLR']:
-        df = pd.DataFrame(np.array((data[key])),columns =cols1)
-        df.to_excel(writer,sheet_name =key)
+## Change names of columns for excel sheets
+D = {}
+ind = (pd.date_range(start='24/03/2020',end='23/03/2021')).date
+for location in locations:
+    dd = {};
+    writer = pd.ExcelWriter('Data_RLA/'+location+'.xlsx', engine='xlsxwriter')
+    data = loadmat(location+'.mat')
+    for key in variables[:5]:
+        df = pd.DataFrame(np.array((data[key])),columns =colsC,index=ind)
+        df.to_excel(writer,sheet_name =temp[key])
+        dd[key] = df
+    for key in  variables[5:]:
+        df = pd.DataFrame(np.array((data[key])),columns =colsR,index=ind)
+        df.to_excel(writer,sheet_name =temp[key])
         dd[key] = df
     writer.save()
     D[location] = dd
@@ -57,10 +89,10 @@ for location in locations:
 # Plot relevant results
 # Figure 1
 plt.close('all')
-RN = ['R0 = 1.75','R0 = 2','R0 = 2.25','R0 = 2.5' ]
+RN = ['R0=1.75','R0=2','R0=2.25','R0=2.5' ]
 yl = ['Cases per thousands','Cases','Deaths']
-tl = ['Infections','Cases linked to red light area',
-      'Deaths linked to red light area']
+tl = ['Infections','Hospitalization in red light area',
+      'Deaths in red light area']
 for location in locations:
     r0 = RN[2]
     fig = plt.figure(figsize=(16,10))
@@ -72,8 +104,8 @@ for location in locations:
     sty = ['ko','bo','go']
     D[location]['CasesPC'][r0].plot(ax=ax1,color=cls)
     D[location]['CasesRPC'][r0].iloc[::3,:].plot(ax=ax1,style=sty,ms=3)
-    D[location]['CLR'][r0].plot(ax=ax2,style=sty[1:],ms=3)
-    D[location]['DLR'][r0].plot(ax=ax3,style=sty[1:],ms=3)
+    D[location]['HospR'][r0].plot(ax=ax2,style=sty,ms=3)
+    D[location]['DeathsR'][r0].plot(ax=ax3,style=sty,ms=3)
     for i, aa in enumerate([ax1,ax2,ax3]):
         aa.spines['right'].set_visible(False)
         aa.spines['top'].set_visible(False)
@@ -82,7 +114,7 @@ for location in locations:
         aa.legend(frameon=False,loc='best')
         aa.set_title(tl[i],fontsize=16)
 
-    fig.savefig(location + r0[5:]+'.png',bbox_inches="tight")
+    fig.savefig('Plots/'+location + r0[3:]+'.png',bbox_inches="tight")
 
 # summary data
 data = loadmat('summary.mat')

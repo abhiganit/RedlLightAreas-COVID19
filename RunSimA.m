@@ -13,9 +13,9 @@ State = RLA{wr};
 R0E=r0;
 
 [beta,kA,kM,sigma,tau,M,M2,gamma,a,q,h,f,c,delta,mh,mueH,psiH,mc,mueC,psiC,P]=ParameterOutput(Amin,R0E,State,0);
+%q = 0; % Do not consider people going to isolated class directly
+       % from exposed.
 
-q = 0;
-tau = 1;
 % We assume that probability of infection for interaction between
 % red light area and general population is 1.
 tm = 1/beta;
@@ -67,19 +67,13 @@ options = odeset('RelTol',10^(-9),'AbsTol',(10^(-9).*ones(size(IC))),...
                  'NonNegative',1:(21*A*Ss));
 
 %% without any lockdown (If no intervention)
-tl = 365; % total time to run
+tl = 366; % total time to run
 [TM0,YM0]=ode15s(@(t,y)ASODE(t,y,beta,kA,kM,sigma,tau,M,M2,gamma,a,q,h,f,c,...
                             delta,mh,mueH,psiH,mc,mueC,psiC,Pop,A,Ss,CM,tm),...
                  [0:tl],IC,options);
 
 
 %% with lockdown (Current intervention)
-% Run initial period without 21 days lockdown
-% tbl = 1; % time before lockdown
-% [TM1,YM1]=ode15s(@(t,y)ASODE(t,y,beta,kA,kM,sigma,tau,M,M2,gamma,a,q,h,f,c,...
-%                              delta,mh,mueH,psiH,mc,mueC,psiC,Pop,A,Ss,CM,tm),...
-%                   [0:tbl],IC,options);
-
 % Run 21 days lockdown
 % Get parameters with lockdown
 Mx = M2;
@@ -96,7 +90,7 @@ tau = 1;
 
 % Run after lockdown
 IC = YM2(end,:);
-tal = 325;
+tal = 326;
 
 [TM3,YM3] = ode15s(@(t,y)ASODE(t,y,beta,kA,kM,sigma,tau,M,M2,gamma,a,q,h,f,c,...
                              delta,mh,mueH,psiH,mc,mueC,psiC,Pop,A,Ss,CM,tm),...
@@ -109,7 +103,7 @@ M = repmat(MA,Ss);
 M = CM.*M;
 
 IC = YM2(end,:);
-tal = 325;
+tal = 326;
 [TM4,YM4] = ode15s(@(t,y)ASODE(t,y,beta,kA,kM,sigma,tau,M,M2,gamma,a,q,h,f,c,...
                              delta,mh,mueH,psiH,mc,mueC,psiC,Pop,A,Ss,CM,tm),...
                   [tbl+ttl:tbl+ttl+tal],IC,options);

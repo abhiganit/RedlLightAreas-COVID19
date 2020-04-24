@@ -26,7 +26,7 @@ QN=6*A*Ss+[1:A*Ss]; % Symptomatic mild infections (not isolated)
 H= 7*A*Ss+[1:A*Ss]; % Hospitalization
 C= 8*A*Ss+[1:A*Ss]; % Need ICU
 D= 9*A*Ss+[1:A*Ss]; % Deaths
-CC = 10*A*Ss+[1:A*Ss]; % Cumulative cases due to RLA
+CC = 10*A*Ss+[1:A*Ss]; % Cumulative cases
 ER= 11*A*Ss+[1:A*Ss]; % Incubation
 IAR=12*A*Ss+[1:A*Ss]; % Asymptomatic infections
 IHR= 13*A*Ss+[1:A*Ss]; % Symptomatic severe infections (not isolated)
@@ -115,7 +115,8 @@ end
 locations = {'Mumbai','Nagpur','Delhi','Kolkata','Pune','India'};
 for i = 1:6
     Cases = []; CasesR = []; CasesPC = []; CasesRPC = [];
-    CLR = []; DLR = [];
+    CLR = []; DLR = []; CumCases = []; Hosp = []; HospR = [];
+    Deaths = []; DeathsR = [];
     for k = 1:4 % varying over R0
         tM0 = TM0{i}{k}; tM = TM{i}{k}; tML = TML{i}{k};
         yM0 = YM0{i}{k}; yM = YM{i}{k}; yML = YML{i}{k};
@@ -127,23 +128,32 @@ for i = 1:6
             CasesPC = [CasesPC,1000*sum(y{j}(st:en,[IA IH IN QH QN]),2)/ ...
                        PopA];
             CasesR = [CasesR,1000*sum(y{j}(st:en,[IA2 IH2 IN2 QH2 QN2]),2)/PopR];
-            CasesRPC = [CasesRPC,1000*sum(y{j}(st:en,[IA2 IH2 IN2 QH2 QN2]),2)/PopR];
-        end
-        for j = 2:3
+            CasesRPC = [CasesRPC,1000*sum(y{j}(st:en,[IA2 IH2 IN2 ...
+                                QH2 QN2]),2)/PopR];
+            CumCases = [CumCases,sum(y{j}(st:en,[CC]),2)];
+            Deaths = [Deaths,sum(y{j}(st:en,[D]),2)];
+            DeathsR = [DeathsR,sum(y{j}(st:en,[D2]),2)];
+            Hosp = [Hosp,sum(y{j}(st:en,[H,C]),2)];
+            HospR = [HospR,sum(y{j}(st:en,[H2,C2]),2)];
             CLR = [CLR,sum(y{j}(st:en,[CCR]),2)];
             DLR = [DLR,sum(y{j}(st:en,[DR]),2)];
+
         end
+        % for j = 2:3
+        %     CLR = [CLR,sum(y{j}(st:en,[CCR]),2)];
+        %     DLR = [DLR,sum(y{j}(st:en,[DR]),2)];
+        % end
 
     end
 filename = strcat(locations{i},'.mat');
-save(filename,'Cases','CasesPC','CasesR','CasesRPC','CLR','DLR');
+save(filename,'Cases','CasesPC','CasesR','CasesRPC','CLR','DLR','CumCases','Hosp','HospR','Deaths','DeathsR');
 end
 
 % save summary
 save('summary.mat','Dl','Pl','Cs','Ds');
 
 
-%% Plots (Have written code to plot them in Python
+%% Plots (Have now written code to plot them in Python)
 locations =  {'Mumbai','Nagpur','Delhi','Kolkata','Pune','India'};
 rang= {'#fef0d9','#fdcc8a','#fc8d59','#e34a33','#b30000'};
 dm = [1,1,4];
@@ -295,164 +305,4 @@ set(h,'FontSize',20);
 
 % [ax,h] = suplabel('Delay in peak','y');
 % set(h,'FontSize',18);
-print('SummaryZoom','-dpng');
-
-
-
-%% OLD Figures- Plotting prevalence seperately
-
-% For each RLA seperately
-% For a fixed R0 and fixed transmissibility (1)
-% rang = {'#636363','#fdbb84','#bf5b17','#beaed4','#386cb0'};
-
-% for i = 1:5
-%     tM0 = TM0{i}{2}{1}; tM = TM{i}{2}{1}; tML = TML{i}{2}{1};
-%     yM0 = YM0{i}{2}{1}; yM = YM{i}{2}{1}; yML = YML{i}{2}{1};
-
-%     fig = figure('position',[300,200,1400,1200]);%,'visible','off');
-%     subplot(2,1,1)
-%     plot(tM0(st:en),(sum(yM0(st:en,[IA IH IN QH QN]),2)/1000000),'k', ...
-%          'LineWidth',2.5); hold on;
-%     plot(tM(st:en),(sum(yM(st:en,[IA IH IN QH QN]),2)/1000000),'b', ...
-%          'LineWidth',2.5);hold on;
-%     plot(tML(st:en),(sum(yML(st:en,[IA IH IN QH QN]),2)/1000000),'g', ...
-%          'LineWidth',2.5);hold on;
-%     box off;
-%     set(gca,'LineWidth',2,'tickdir','out','Fontsize',16);
-%     title('Infections');
-%     ylabel('Cases(in millions)','Fontsize',16);
-%     legend('No lockdown','Lockdown','Continued closure of RLA');
-%     legend boxoff
-%     subplot(2,1,2)
-%     plot(tM(st:en),sum(yM(st:en,[CC]),2),...
-%          'color',hex2rgb(rang(3)),...
-%          'LineWidth',2.5);
-%     hold on;
-%     plot(tML(st:en),sum(yML(st:en,[CC]),2),...
-%          'color',hex2rgb(rang(4)),...
-%          'LineWidth',2.5);
-%     box off;
-%     set(gca,'LineWidth',2,'tickdir','out','Fontsize',16);
-%     title('Cases attibutable to Red Light Areas');
-%     ylabel('Cases','Fontsize',16);
-%     lg = legend('No continued closure','Continued closure');
-%     lg.FontSize =16;
-%     lg.Location = 'northwest';
-%     legend boxoff;
-%     [ax,h] = suplabel('Days','x');
-%     set(h,'FontSize',18);
-%     hold off;
-%     filename = strcat('RLA',int2str(i));
-%     print(filename,'-dpng');
-% end
-
-% close all;
-% % Plot red light area cases
-% for i = 1:5
-%     tM0 = TM0{i}{2}{1}; tM = TM{i}{2}{1}; tML = TML{i}{2}{1};
-%     yM0 = YM0{i}{2}{1}; yM = YM{i}{2}{1}; yML = YML{i}{2}{1};
-
-%     fig = figure('position',[300,200,1400,1200]);%,'visible','off');
-%     plot(tM0(st:en),(sum(yM0(st:en,[IA2 IH2 IN2 QH2 QN2]),2)),'k', ...
-%          'LineWidth',2.5); hold on;
-%     plot(tM(st:en),(sum(yM(st:en,[IA2 IH2 IN2 QH2 QN2]),2)),'b', ...
-%          'LineWidth',2.5);hold on;
-%     plot(tML(st:en),(sum(yML(st:en,[IA2 IH2 IN2 QH2 QN2]),2)),'g', ...
-%          'LineWidth',2.5);hold on;
-%     box off;
-%     set(gca,'LineWidth',2,'tickdir','out','Fontsize',16);
-%     title('Infections');
-%     ylabel('Cases','Fontsize',16);
-%     xlabel('Days','Fontsize',16);
-%     legend('No lockdown','Lockdown','Continued closure of RLA');
-%     legend boxoff
-%     filename = strcat('RLA/RLA',int2str(i));
-%     print(filename,'-dpng');
-% end
-
-
-
-
-
-
-% % Plot delays in peak
-% titles = {'R_0 = 1.75','R_0 = 2','R_0=2.25'};
-% close all;
-% fig = figure('position',[300,200,1400,1200]);%%,'visible','off');
-% for i =1:3
-%     subplot(3,1,i)
-%     colormap(hex2rgb(rang));
-%     bar(Dl{i});
-%     title(titles{i},'FontSize',12)
-%     set(gca,'fontsize',16)
-%     if i <3
-%         set(gca,'XTickLabel',[])
-%     end
-%     if i ==1
-%         hleg = legend('5','10','15','20');
-%         htitle = get(hleg,'Title');
-%         set(htitle,'String','Relative transmissibility at RLA')
-%         legend boxoff
-%     end
-%     box off;
-% end
-% [ax,h] = suplabel('Red light areas','x');
-% set(h,'FontSize',18);
-% [ax,h] = suplabel('Delay in peak','y');
-% set(h,'FontSize',18);
-% print('Delays','-dpng');
-
-
-% % Plot change in peak
-% titles = {'R_0 = 1.75','R_0 = 2','R_0=2.25'};
-% close all;
-% fig = figure('position',[300,200,1400,1200]);%%,'visible','off');
-% for i =1:3
-%     subplot(3,1,i)
-%     colormap(hex2rgb(rang));
-%     bar(Pl{i});
-%     title(titles{i},'FontSize',12)
-%     set(gca,'fontsize',16)
-%     if i <3
-%         set(gca,'XTickLabel',[])
-%     end
-%     if i ==1
-%         hleg = legend('5','10','15','20');
-%         htitle = get(hleg,'Title');
-%         set(htitle,'String','Relative transmissibility at RLA')
-%         legend boxoff
-%     end
-%     box off;
-% end
-% [ax,h] = suplabel('Red light areas','x');
-% set(h,'FontSize',18);
-% [ax,h] = suplabel('Difference in infections at peak','y');
-% set(h,'FontSize',18);
-% print('Peaks','-dpng');
-
-
-% % Plot averted cases originating from RLA
-% close all;
-% fig = figure('position',[300,200,1400,1200]);%%,'visible','off');
-% for i =1:3
-%     subplot(3,1,i)
-%     colormap(hex2rgb(rang));
-%     bar(Cs{i}/1000);
-%     title(titles{i},'FontSize',12)
-%     set(gca,'fontsize',16)
-%     if i <3
-%         set(gca,'XTickLabel',[])
-%     end
-%     if i ==1
-%         hleg = legend('5','10','15','20');
-%         htitle = get(hleg,'Title');
-%         set(htitle,'String','Relative transmissibility at RLA')
-%         legend boxoff
-%     end
-%     box off;
-% end
-% [ax,h] = suplabel('Red light areas','x');
-% set(h,'FontSize',18);
-% [ax,h] = suplabel('Cases linked to Red Light Area (in thousands)','y');
-% set(h,'FontSize',18);
-% print('Averted','-dpng');
+print('Summary','-dpng');
