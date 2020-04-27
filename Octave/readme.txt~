@@ -1,0 +1,8 @@
+* Octave/Matlab files (*.m)
+  + format_data.m
+  + DemoIndia.m
+  + CalcR0.m
+  + ParametersOutput.m
+  + RunSimA.m
+  + ASODE.m
+  + get_results.m
