@@ -15,17 +15,8 @@ function dxdt = ASODE(t,x,beta,kA,kM,sigma,tau,M,M2,gamma,a,q,h,f,c,delta,mh,mue
 %       C= 8*A+[1:A]; % Need ICU
 %       D= 9*A+[1:A]; % Deaths
 %       CC=10*A+[1:A];% Cumulative number of cases due to Red light area
-%       ER= 11*A+[1:A]; % Incubation
-%       IAR=12*A+[1:A]; % Asymptomatic infections
-%       IHR= 13*A+[1:A]; % Symptomatic severe infections (not isolated)
-%       INR=14*A+[1:A]; % Symptomatic mild infections (not isolated)
-%       QHR=15*A+[1:A]; % Symptomatic severe infections (isolated)
-%       QNR=16*A+[1:A]; % Symptomatic mild infections (not isolated)
-%       HR= 17*A+[1:A]; % Hospitalization
-%       CR= 18*A+[1:A]; % Need ICU
-%       DR= 19*A+[1:A]; % Deaths
-%       CCR=20*A+[1:A];% Cumulative number of cases due to Red light area
-
+%       CH=11*A+[1:A];%
+%
 %beta  - probability of infection
 %kA    - relative infectivity of asymptomatic cases
 %kM    - relative infectivity of mild cases
@@ -54,7 +45,6 @@ function dxdt = ASODE(t,x,beta,kA,kM,sigma,tau,M,M2,gamma,a,q,h,f,c,delta,mh,mue
 %% Initialize the vector and specify the index equations
 dxdt=zeros(length(x),1);
 
-%% Compartments
 S=     [1:A*Ss]; % Susceptible
 E=   A*Ss+[1:A*Ss]; % Incubation
 IA=2*A*Ss+[1:A*Ss]; % Asymptomatic infections
@@ -65,23 +55,15 @@ QN=6*A*Ss+[1:A*Ss]; % Symptomatic mild infections (not isolated)
 H= 7*A*Ss+[1:A*Ss]; % Hospitalization
 C= 8*A*Ss+[1:A*Ss]; % Need ICU
 D= 9*A*Ss+[1:A*Ss]; % Deaths
-CC=10*A*Ss+[1:A*Ss];% Cumulative number of cases due to Red light area
-ER= 11*A*Ss+[1:A*Ss]; % Incubation
-IAR=12*A*Ss+[1:A*Ss]; % Asymptomatic infections
-IHR= 13*A*Ss+[1:A*Ss]; % Symptomatic severe infections (not isolated)
-INR=14*A*Ss+[1:A*Ss]; % Symptomatic mild infections (not isolated)
-QHR=15*A*Ss+[1:A*Ss]; % Symptomatic severe infections (isolated)
-QNR=16*A*Ss+[1:A*Ss]; % Symptomatic mild infections (not isolated)
-HR= 17*A*Ss+[1:A*Ss]; % Hospitalization
-CR= 18*A*Ss+[1:A*Ss]; % Need ICU
-DR= 19*A*Ss+[1:A*Ss]; % Deaths
-CCR=20*A*Ss+[1:A*Ss];% Cumulative number of cases due to Red light area
-
+CC=10*A*Ss+[1:A*Ss];% Cumulative cases
+CH=11*A*Ss+[1:A*Ss];
+CI=12*A*Ss+[1:A*Ss];
 
 %% Convert age-dependent parameters to account for all state together
 % hospitalization rate
 h = repmat(h,Ss,1);
 c = repmat(c,Ss,1);
+q = repelem(q,1,A)';
 
 % Intra-region probability of infections will be \beta whereas
 % inter-region probability of infection will be 1.
@@ -95,20 +77,17 @@ M2R = M2;
 MR(1:4,1:4) = 0;
 M2R(1:4,1:4) = 0;
 
+
 %% Susceptible and vaccinated population
 dxdt(S)= -(kA*M*x(IA)./P + kM*M*x(IN)./P ...
                  + M*x(IH)./P+kM*M2*x(QN)./P+M2*x(QH)./P).*x(S);
 
-% dxdt(S)= -(kA*M*x(IA)./P + kM*M*x(IN)./P ...
-%                  + M*x(IH)./P).*x(S);
 
 
 %% Incubation period population
 dxdt(E)= (kA*M*x(IA)./P + kM*M*x(IN)./P ...
-                 + M*x(IH)./P+kM*M2*x(QN)./P+M2*x(QH)./P).*x(S)-sigma.*x(E);
+               + M*x(IH)./P+kM*M2*x(QN)./P+M2*x(QH)./P).*x(S)-sigma.*x(E);
 
-% dxdt(E)= (kA*M*x(IA)./P + kM*M*x(IN)./P ...
-%                  + M*x(IH)./P).*x(S)-sigma.*x(E);
 
 %% Asymptomatic infections
 dxdt(IA) = a.*sigma.*x(E) - gamma.*x(IA);
@@ -134,48 +113,14 @@ dxdt(C)=c.*delta.*x(QH)+(1-f).*c.*delta.*x(IH)-(1-mc).*psiC.*x(C)-mc.*mueC.*x(C)
 dxdt(D) = mh.*mueH.*x(H) + mc.* mueC.*x(C);
 
 %% Cumulative cases
+%dxdt(CC) = sigma1*x(E);
 dxdt(CC) = (kA*M*x(IA)./P + kM*M*x(IN)./P ...
                  + M*x(IH)./P+kM*M2*x(QN)./P+M2*x(QH)./P).*x(S);
 
-% dxdt(CC) = (kA*M*x(IA)./P + kM*M*x(IN)./P ...
-%                  + M*x(IH)./P).*x(S);
+%% Cumulative hospitalization
+dxdt(CH) = (1-c).*delta.*x(QH)+(1-f).*(1-c).*delta.*x(IH);
 
-
-%% Compartments considering infections attributable to RLA
-%% Incubation period population
-dxdt(ER)= (kA*MR*x(IA)./P + kM*MR*x(IN)./P ...
-                 + MR*x(IH)./P+kM*M2R*x(QN)./P+M2R*x(QH)./P).*x(S)-sigma.*x(ER);
-
-% dxdt(ER)= (kA*MR*x(IA)./P + kM*MR*x(IN)./P ...
-%                  + MR*x(IH)./P).*x(S)-sigma.*x(ER);
-
-%% Asymptomatic infections
-dxdt(IAR) = a.*sigma.*x(ER) - gamma.*x(IAR);
-
-%% Symptomatic and not isolated
-% Severe
-dxdt(IHR)=(1-a).*(1-q).*h.*sigma.*x(ER) -f.*tau.*x(IHR)-(1-f).*delta.*x(IHR);
-% Mild
-dxdt(INR)=(1-a).*(1-q).*(1-h).*sigma.*x(ER)-f.*tau.*x(INR)-(1-f).*gamma.*x(INR);
-%% Symptomatic and isolated (ISI,IMI)
-% Severe
-dxdt(QHR)=(1-a)*q.*h.*sigma.*x(ER) + f.*tau.*x(IHR) -delta.*x(QHR);
-% Mild
-dxdt(QNR)=(1-a)*q.*(1-h).*sigma.*x(ER)+f.*tau.*x(INR)-gamma.*x(QNR);
-
-%% Hospital
-dxdt(HR)=(1-c).*delta.*x(QHR)+(1-f).*(1-c).*delta.*x(IHR)-(1-mh).*psiH.*x(HR)-mh.*mueH.*x(HR);
-%% ICU
-dxdt(CR)=c.*delta.*x(QHR)+(1-f).*c.*delta.*x(IHR)-(1-mc).*psiC.*x(CR)-mc.*mueC.*x(CR);
-
-%% Deaths
-dxdt(DR) = mh.*mueH.*x(HR) + mc.* mueC.*x(CR);
-
-%% Cumulative cases due to RLA
-dxdt(CCR) = (kA*MR*x(IA)./P + kM*MR*x(IN)./P ...
-                 + MR*x(IH)./P+kM*M2R*x(QN)./P+M2R*x(QH)./P).*x(S);
-
-% dxdt(CCR) = (kA*MR*x(IA)./P + kM*MR*x(IN)./P ...
-%                  + MR*x(IH)./P).*x(S);
+%% Cumulative ICU admissions
+dxdt(CI) = c.*delta.*x(QH)+(1-f).*c.*delta.*x(IH);
 
 end
