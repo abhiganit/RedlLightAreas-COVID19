@@ -13,23 +13,6 @@ function [M,M2,P] = DemoIndia(Amin,State,lockdown)
 
 load IndiaDemo
 PFull = table2array(Pop_Dist(:,State));
-% PFull = [1381200
-%         1535972
-%         1648147
-%         1667375
-%         1764060
-%         1668326
-%         1434699
-%         1319244
-%         1097197
-%         911213
-%         687469
-%         508892
-%         472019
-%         272452
-%         189250
-%         100693
-%         113031];
 
 AA=5.*[0:(length(PFull)-1)];
 Findx=cell(length(Amin),1);

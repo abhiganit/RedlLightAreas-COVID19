@@ -30,11 +30,6 @@ for i in range(1,len(temp)):
 df.columns = temp
 df['TELANGANA'] = df['ANDHRA PRADESH'] # Assign same weights to Telangana as Andhra Pradesh
 
-# Age-distribution for the the regions being considered
-# df = df[['NCT OF DELHI','NCT OF DELHI',
-#          'WEST BENGAL','WEST BENGAL',
-#          'MAHARASHTRA','MAHARASHTRA',
-#          'MAHARASHTRA','MAHARASHTRA']]
 
 df = df[['MAHARASHTRA','MAHARASHTRA',
          'MAHARASHTRA','MAHARASHTRA',
