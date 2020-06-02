@@ -10,12 +10,10 @@ State = RLA{wr};
 R0E=r0;
 [beta,kA,kM,sigma,tau,M,M2,gamma,a,q,h,f,c,delta,mh,mueH,psiH,mc,mueC,psiC,P]=ParameterOutput(Amin,R0E,State,0);
 
-% Calculating transmission multiplier to make probability of
-% infection during interaction of two population = 1 and increasing
-% contact pattern for the interaction.
 int_per_visit = [49,60,74,64,82,35];
 int_mult = int_per_visit(wr)/mean(mean(M));
-tm = int_mult/beta;
+wt = (1+5*beta)/6;
+tm =  int_mult*wt/beta;
 
 
 %% Parameterization and Initialization of  model
@@ -31,9 +29,10 @@ end
 MA = M; MH = M2;
 Ss = length(States);
 
-% Contact rates to connect to populations
-CP = [0.021605997,0.08710681,0.039846154,...
-      0.142222222,0.123698899,0.014836909]; % Contact rates for locations
+% Daily interaction between clients and sex-workers
+CP= [0.0004409387095,0.001451780159,0.0005384615385,...
+    0.002222222222,0.001508523156,0.0004239116965];
+
 
 cpd = CP(wr);
 % Create connection matrix
@@ -100,21 +99,6 @@ CH=12*A*Ss+[1:A*Ss];% Cumulative hospitalization
 CI=13*A*Ss+[1:A*Ss];% Cumulative ICU admissions
 CF=14*A*Ss+[1:A*Ss];% Cumulative numbers for model fit
 
-% seperating between two populations
-S1 = S(1:4); S2 = S(5:end);
-E1 = E(1:4); E2 = E(5:end);
-EI1 = EI(1:4); EI2 = EI(5:end);
-IA1 = IA(1:4); IA2 = IA(5:end);
-IH1 = IH(1:4); IH2 = IH(5:end);
-IN1 = IN(1:4); IN2 = IN(5:end);
-QH1 = QH(1:4); QH2 = QH(5:end);
-QN1 = QN(1:4); QN2 = QN(5:end);
-H1 = H(1:4); H2 = H(5:end);
-C1 = C(1:4); C2 = C(5:end);
-D1 = D(1:4); D2 = D(5:end);
-CC1 = CC(1:4); CC2=CC(5:end);
-CH1 = CH(1:4); CH2=CH(5:end);
-CI1 = CI(1:4); CI2=CI(5:end);
 
 
 % calculate least-square error

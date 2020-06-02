@@ -39,7 +39,7 @@ M = B.*M;
 M2 = beta.*M2;
 
 delta1 = delta; %1/(1/delta - 1/tau);
-gamma1 = gamma; % 1/(1/gamma - 1/tau);
+gamma1 =  gamma; %1/(1/gamma - 1/tau);
 
 
 %% Susceptible and population
@@ -86,9 +86,7 @@ dxdt(CH) = (1-c).*delta1.*x(QH)+(1-f).*(1-c).*delta.*x(IH);
 dxdt(CI) = c.*delta1.*x(QH)+(1-f).*c.*delta.*x(IH);
 
 %% To fit
-% Cumulative cases that will be seen/tested, so fitted
+% Symptomatic cumulative cases to be fitted
 dxdt(CF) =  (1-a).*(1-q).*h.*sigma(2).*x(EI) +(1-a).*(1-q).*(1-h).*sigma(2).*x(EI) + (1-a)*q.*h.*sigma(2).*x(EI)  + (1-a)*q.*(1-h).*sigma(2).*x(EI);
-
-
 
 end

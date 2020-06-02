@@ -49,6 +49,25 @@ for i = 1:6
         fit = fminsearchbnd(f,init,lb,ub)
         fits(i,j) = fit;
         % check model fit?
+
+        % Plot fit
+
+    end
+end
+
+
+%% save fits as mat file
+save('Fitting','fits')
+
+
+%% Check fitting
+R0 = [1.75,2,2.25,2.5]; % Different values of R0
+load Fitting
+for i = 1:6
+    for j = 1:4
+        wr = i; % Choose location
+        r0 = R0(j); % Choose R0 value
+        fit = fits(i,j);
         [TM0,YM0,TM,YM,TML,YML,Pop] = RunSimA(wr,r0,fit);
 
         tm = TM(1:41);
@@ -56,12 +75,7 @@ for i = 1:6
 
         yo = df(:,wr+1);
         to = df(:,1);
-
-        % Plot fit
-        plot(tm,ym,'b',to,yo,'ro')
+        fig = figure;
+        plot(tm,ym,'b',to,yo,'ro');
     end
 end
-
-
-%% save fits as mat file
-save('Fitting','fits')

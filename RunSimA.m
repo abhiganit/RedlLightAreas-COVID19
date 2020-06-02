@@ -1,6 +1,6 @@
 function [TM0,YM0,TM,YM,TML,YML,Pop] = RunSimA(wr,r0,fit)
 %close all;
-%wr = 6; r0 = 2.5; fit = 0.0005;
+%wr = 6; r0 = 2; fit = 0.0015;
 %% Initialization to get parameters
 % Age-distribution (0-19,20-49,50-64,65-)
 Amin=[0 20 50 65];
@@ -12,13 +12,22 @@ R0E=r0;
 
 [beta,kA,kM,sigma,tau,M,M2,gamma,a,q,h,f,c,delta,mh,mueH,psiH,mc,mueC,psiC,P]=ParameterOutput(Amin,R0E,State,0);
 
-% Calculating transmission multiplier to make probability of
-% infection during interaction of two population = 1 and increasing
-% contact pattern for the interaction.
-int_per_visit = [49,60,74,64,82,35];
-int_mult = int_per_visit(wr)/mean(mean(M))
-tm = int_mult/beta;
 
+% Approach 1
+% Calculating scaling factor to account for increased contacts when
+% RLA are open based on total interactions per visit by a client
+int_per_visit = [49,60,74,64,82,35];
+int_mult = int_per_visit(wr)/mean(mean(M));
+
+% As interactions in red light area is more intimate, we assume
+% that probability of infection due to interaction with sex workers
+% is 1. Moreover, as non-sex workers in red light areas interact
+% 5 times higher than sex-workers with clients, we adjust the
+% probability of infection in red-light area accordingly.
+wt = (1+5*beta)/6;
+
+
+tm = int_mult*wt/beta;
 %% Parameterization and initialization of model
 load IndiaDemo
 names = Pop_Dist.Properties.VariableNames;
@@ -31,10 +40,10 @@ end
 MA = M; MH = M2;
 Ss = length(States);
 
-% Contact rates to connect to populations
-CP = [0.021605997,0.08710681,...
-      0.039846154,0.142222222,...
-      0.123698899,0.014836909]; % Corresponding contact rates
+% Daily interaction between clients and sex-workers
+CP= [0.0004409387095,0.001451780159,0.0005384615385,...
+    0.002222222222,0.001508523156,0.0004239116965];
+
 
 cpd = CP(wr);
 % Create connection matrix
@@ -47,7 +56,10 @@ M = CM.*M;
 
 % Contact pattern matrix for quarantine/isolation
 M2 = kron(eye(Ss),M2);
-
+% Should we
+% wt = (1+5*beta)/6;;
+% beta = getBetaAll(R0E,Pop,sigma,h,gamma,delta,M,kM,kA,a,wt,A)
+% tm = wt/beta;
 % Make initial condition- prevalence based.
 prev = fit;
 cG = 0.01*prev*sum(Pop(1:4));
@@ -78,7 +90,7 @@ Mx = M2;  % contact patterns set to household matrix during
           % lockdown, no connection between populations
 M2x = M2; % household contact patterns for quarantined populations
 tbl = 0;  % initial point
-ttl = 40; % time till lockdown
+ttl = 68; % time till lockdown
 q = 0.5;  % proportion of cases being quarantined set to 50%
 
 [TM2,YM2] = ode15s(@(t,y)ASODE(t,y,beta,kA,kM,sigma,tau,Mx,M2x,gamma,a,q,h,f,c,...
@@ -88,7 +100,7 @@ q = 0.5;  % proportion of cases being quarantined set to 50%
 % % Run after lockdown without RLA closure
 % All parameters go back to status quo,except proportion being quarantined
 IC = YM2(end,:);
-tal = 325;
+tal = 297;
 [TM3,YM3] = ode15s(@(t,y)ASODE(t,y,beta,kA,kM,sigma,tau,M,M2,gamma,a,q,h,f,c,...
                              delta,mh,mueH,psiH,mc,mueC,psiC,Pop,A,Ss,CM,tm),...
                   [tbl+ttl:tbl+ttl+tal],IC,options);
@@ -102,7 +114,7 @@ M = repmat(MA,Ss); % overall contact pattern scaled to match age-dist.
 M = CM.*M; % apply connection matrix to contact patterns
 
 IC = YM2(end,:);
-tal = 325;
+tal = 297;
 [TM4,YM4] = ode15s(@(t,y)ASODE(t,y,beta,kA,kM,sigma,tau,M,M2,gamma,a,q,h,f,c,...
                              delta,mh,mueH,psiH,mc,mueC,psiC,Pop,A,Ss,CM,tm),...
                   [tbl+ttl:tbl+ttl+tal],IC,options);
@@ -119,22 +131,22 @@ YML = vertcat(YM2,YM4(2:end,:));
 
 %%% For testing code
 % % % % %% Index for dxdt and x to make readability of code easier
-% A = 4; Ss = 2;
-% S=     [1:A*Ss];    % Susceptible
-% E=   A*Ss+[1:A*Ss]; % Incubation
-% EI=2*A*Ss+[1:A*Ss]; % Presymptomatic infectious
-% IA=3*A*Ss+[1:A*Ss]; % Asymptomatic infections
-% IH=4*A*Ss+[1:A*Ss]; % Symptomatic severe infections (not isolated)
-% IN=5*A*Ss+[1:A*Ss]; % Symptomatic mild infections (not isolated)
-% QH=6*A*Ss+[1:A*Ss]; % Symptomatic severe infections (isolated)
-% QN=7*A*Ss+[1:A*Ss]; % Symptomatic mild infections (not isolated)
-% H= 8*A*Ss+[1:A*Ss]; % Hospitalization
-% C= 9*A*Ss+[1:A*Ss]; % Need ICU
-% D= 10*A*Ss+[1:A*Ss];% Deaths
-% CC=11*A*Ss+[1:A*Ss];% Cumulative cases
-% CH=12*A*Ss+[1:A*Ss];% Cumulative hospitalization
-% CI=13*A*Ss+[1:A*Ss];% Cumulative ICU admissions
-% CF=14*A*Ss+[1:A*Ss];% Cumulative numbers for model fit
+A = 4; Ss = 2;
+S=     [1:A*Ss];    % Susceptible
+E=   A*Ss+[1:A*Ss]; % Incubation
+EI=2*A*Ss+[1:A*Ss]; % Presymptomatic infectious
+IA=3*A*Ss+[1:A*Ss]; % Asymptomatic infections
+IH=4*A*Ss+[1:A*Ss]; % Symptomatic severe infections (not isolated)
+IN=5*A*Ss+[1:A*Ss]; % Symptomatic mild infections (not isolated)
+QH=6*A*Ss+[1:A*Ss]; % Symptomatic severe infections (isolated)
+QN=7*A*Ss+[1:A*Ss]; % Symptomatic mild infections (not isolated)
+H= 8*A*Ss+[1:A*Ss]; % Hospitalization
+C= 9*A*Ss+[1:A*Ss]; % Need ICU
+D= 10*A*Ss+[1:A*Ss];% Deaths
+CC=11*A*Ss+[1:A*Ss];% Cumulative cases
+CH=12*A*Ss+[1:A*Ss];% Cumulative hospitalization
+CI=13*A*Ss+[1:A*Ss];% Cumulative ICU admissions
+CF=14*A*Ss+[1:A*Ss];% Cumulative numbers for model fit
 
 % %% Seperating between general population & rla
 % S1 = S(1:4); S2 = S(5:end);
@@ -165,12 +177,12 @@ YML = vertcat(YM2,YM4(2:end,:));
 % plot(TM,sum(YM(:,[QN]),2),'m','Linewidth',2); hold on;
 % plot(TML,sum(YML(:,[QN]),2),'y','Linewidth',2); hold on;
 % % % % % % All
-% plot(TM0,sum(YM0(:,[IA2,IH2,IN2,QH2,QN2]),2),'k','Linewidth',2); hold on;
-% plot(TM,sum(YM(:,[IA2,IH2,IN2,QH2,QN2]),2),'b','Linewidth',2); hold on;
-% plot(TML,sum(YML(:,[IA2,IH2,IN2,QH2,QN2]),2),'g','Linewidth',2); hold on;
+% plot(TM0,sum(YM0(:,[IA,IH,IN,QH,QN]),2),'k','Linewidth',2); hold on;
+% plot(TM,sum(YM(:,[IA,IH,IN,QH,QN]),2),'b','Linewidth',2); hold on;
+% plot(TML,sum(YML(:,[IA,IH,IN,QH,QN]),2),'g','Linewidth',2); hold on;
 
-% hold on;
-% plot(TM0,sum(YM0(:,CF),2)); hold on;
+% % hold on;
+% plot(TM0,sum(YM0(:,CC),2)); hold on;
 % plot(TM0,sum(YM0(:,S),2)); hold on;
 
 % plot(TM0,sum(YM0(:,CF2),2),'Linewidth',2); hold on;
