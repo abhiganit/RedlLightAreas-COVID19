@@ -1,11 +1,12 @@
-WR = [1,2,3,4,5,6]; % which Red Light Area
+WR = [1,2,3,4,5,6]; % Indices for locations
                     % 1:Mumbai, 2:Nagpur,3:Delhi,4:Kolkata,5:Pune,6:India
-R0 = [1.75,2,2.25,2.5]; % Different values of R0
 
-load Fitting % load fitting data
+R0 = [1.75,2,2.25,2.5]; % Different values of R0 for which we want results
 
 % Initializing cells for different strategies (time and solutions)
 TM0 = {}; YM0 = {}; TM={}; YM={}; TML={}; YML ={}; Pop={};
+
+load Fitting % load fitting data
 
 % Run simulations for each location at different values of R0.
 i = 1;
@@ -20,8 +21,7 @@ for wr = WR;
     i=i+1;
 end
 
-
-%% Index for dxdt and x to make readability of code easier
+%% Index of solutions to for easier reading
 A = 4; Ss = 2;
 
 S=     [1:A*Ss];    % Susceptible
@@ -58,7 +58,6 @@ CF1 = CF(1:4); CF2 = CF(5:end);
 
 
 %% Plots
-close all;
 locations =  {'Mumbai','Nagpur','Delhi','Kolkata','Pune','India'};
 rang= {'#fef0d9','#fdcc8a','#fc8d59','#e34a33','#b30000'};
 st = 1; en = 365;
@@ -73,7 +72,6 @@ for i = 1:6
     t = {tM0,tM,tML}; y = {yM0,yM,yML};
     colorG = {'k-','b-','g-'};
     colorR = {'ko','bo','go'};
-    xpos = -40;
     %    close all;
     fig = figure('position',[300,200,1400,1200]);%,'visible','off');
     subplot(2,1,1)
@@ -84,10 +82,10 @@ for i = 1:6
         hold on;
     end
     box off;
-    xlim([0,365]);
+     xlim([0,365]);
     set(gca,'LineWidth',2,'tickdir','out','Fontsize',16);
+    title('Infections in general community');
     ylabel('Cases','Fontsize',20);
-    title('Citywide')
     subplot(2,1,2)
     for j = 1:3
         plot(t{j}(st:dm(j):en),...
@@ -98,12 +96,11 @@ for i = 1:6
     box off;
     xlim([0,365]);
     set(gca,'LineWidth',2,'tickdir','out','Fontsize',16);
-    title('Red-light area');
-    yp = ylabel('Cases','Fontsize',20);
-    pos = get(yp,'Pos');
+    title('Infections in RLA');
+    ylabel('Cases','Fontsize',20);
     xlabel('Days','Fontsize',20);
-    filename = locations{i}; %strcat('RLA',int2str(i));
-    print(filename,'-dpng');
+    filename = strcat(locations{i},'.png'); %strcat('RLA',int2str(i));
+    %print -dpng char(filename); %,'-dpng');
 end
 
 
@@ -112,6 +109,7 @@ st = 1; en = 366;
 stl = 15; enl = 50;
 
 %% Calculate delay in peak & difference in peak
+
 % Impact of lockdown
 Dcl = []; % PeakTiming(lockdown) - PeakTiming(no lockdown)
 Pcl = []; % PeakCases(no lockdown) - PeakCases(lockdown)
@@ -124,6 +122,7 @@ Pclr = []; % PeakCases(lockdown) - PeakCases(lockdown+conitued rla closure)
 Phlr = []; % PeakHosp(lockdown) - PeakHosp(lockdown+conitued rla closure)
 Pilr = []; % PeakICU(lockdown) - PeakICU(lockdown+conitued rla closure)
 Pdlr = []; % PeakDeath(lockdown)-PeakDeath(lockdown+conitued rla closure)
+
 
 for i = 1:6; % varying over RLAs
     for j = 1:4; %varying over R0
@@ -161,59 +160,7 @@ for i = 1:6; % varying over RLAs
     end
 end
 
-%% Save cumulative differences
-Ccl = []; Cclr = [];
-Chl = []; Chlr = [];
-Cil = []; Cilr = [];
-Cdl = []; Cdlr = [];
-
-Cla ={}; Clra ={}; Hla={}; Hlra={};
-Ila ={}; Ilra={}; Dla={}; Dlra={};
-
-% June 1: 69 days, July 1: 99 Aug 1:130, Sept 1: 161, Oct 1: 191 Nov 1:222
-% Dec 1: 252 % Dec 31: 282
-ct = 365;
-for i = 1:6; % varying over RLAs
-    for j = 1:4; % varying over R0
-        yM0 = YM0{i}{j};
-        yM = YM{i}{j};
-        yML = YML{i}{j};
-        cc0 = (sum(yM0(st+1:en,[CC]),2));
-        ccl = (sum(yM(st+1:en,[CC]),2));
-        ccr = (sum(yML(st+1:en,[CC]),2));
-        ch0 = (sum(yM0(st+1:en,[CH,CI]),2));
-        chl = (sum(yM(st+1:en,[CH,CI]),2));
-        chr = (sum(yML(st+1:en,[CH,CI]),2));
-        ci0 = (sum(yM0(st+1:en,[CI]),2));
-        cil = (sum(yM(st+1:en,[CI]),2));
-        cir = (sum(yML(st+1:en,[CI]),2));
-        cd0 = (sum(yM0(st+1:en,[D]),2));
-        cdl = (sum(yM(st+1:en,[D]),2));
-        cdr = (sum(yML(st+1:en,[D]),2));
-        Ccl(i,j) = cc0(ct) - ccl(ct); %max(cc0) - max(ccl);
-        Cclr(i,j) = ccl(ct) - ccr(ct); %max(ccl) - max(ccr);
-        Chl(i,j) = ch0(ct) - chl(ct);
-        Chlr(i,j) = chl(ct)-chr(ct);
-        Cil(i,j) = ci0(ct) - cil(ct);
-        Cilr(i,j) = cil(ct)-cir(ct);
-        Cdl(i,j) = cd0(ct) - cdl(ct);
-        Cdlr(i,j) = cdl(ct) -cdr(ct);
-        Cla{i}{j} = cc0-ccl;
-        Clra{i}{j} = ccl-ccr;
-        Hla{i}{j} = ch0-chl;
-        Hlra{i}{j} = chl-chr;
-        Ila{i}{j} = ci0 - cil;
-        Ilra{i}{j} = cil-cir;
-        Dla{i}{j} = cd0 - cdl;
-        Dlra{i}{j} = cdl - cdr;
-    end
-end
-
-
-save('summary.mat','Dcl','Pcl','Phl','Pil','Pdl','Dclr','Pclr',...
-     'Phlr','Pilr','Pdlr','Ccl','Cclr','Chl','Chlr','Cil','Cilr',...
-     'Cdl','Cdlr','Cla','Clra','Hla','Hlra','Ila','Ilra','Dla',...
-     'Dlra')
+save('summary','Dcl','Pcl','Phl','Pil','Pdl','Dclr','Pclr','Phlr','Pilr','Pdlr')
 
 
 %% Save temporal data as mat files
